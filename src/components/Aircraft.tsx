@@ -46,15 +46,16 @@ export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut }
     const y = MathUtils.lerp(flight.prevPosition[1], flight.targetPosition[1], t);
     const z = MathUtils.lerp(flight.prevPosition[2], flight.targetPosition[2], t);
 
-    groupRef.current.position.set(x, y, z);
-    // update altitude line with same interpolated position
-    altLineRef.current?.setPosition(_vec.set(x, y, z));
-
+    groupRef.current.position.set(x, y, z); //set aircraft position
+    //lerp heading
     let dh = flight.targetHeading - flight.prevHeading;
     if (dh > 180) dh -= 360;
     if (dh < -180) dh += 360;
     const heading = flight.prevHeading + dh * t;
     groupRef.current.rotation.y = -(heading * Math.PI) / 180;
+
+
+    altLineRef.current?.setPosition(_vec.set(x, y, z)); // set altitude line
 
     if (trailGeoRef.current) {
       const attr = trailGeoRef.current.attributes.position;
