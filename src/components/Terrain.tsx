@@ -1,10 +1,9 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { TextureLoader, Texture } from 'three';
 import { useThree } from '@react-three/fiber';
 import { latLonToTile, tileMetersWidth } from '../utils/tiles';
+import { AIRPORT } from '../utils/coords';
 
-const AIRPORT_LAT = 42.3656;
-const AIRPORT_LON = -71.0096;
 
 function getZoomFromCameraHeight(y: number): number {
   if (y > 80000) return 9;
@@ -70,15 +69,15 @@ export function Terrain() {
     return () => clearInterval(id);
   }, [camera]);
 
-  const tileSize = tileMetersWidth(AIRPORT_LAT, zoom);
-  const centerTile = latLonToTile(AIRPORT_LAT, AIRPORT_LON, zoom);
+  const tileSize = tileMetersWidth(AIRPORT.lat, zoom);
+  const centerTile = latLonToTile(AIRPORT.lat, AIRPORT.lon, zoom);
 
   // Airport's exact pixel position within the center tile, converted to meters
   // fracX/fracY are 0-1 within the tile; subtract 0.5 to get offset from tile center
   const subTileOffsetX = (centerTile.fracX - 0.5) * tileSize;
   const subTileOffsetZ = (centerTile.fracY - 0.5) * tileSize;
 
-  const radius = 2;
+  const radius = 4;
   const tiles = [];
   for (let dx = -radius; dx <= radius; dx++) {
     for (let dy = -radius; dy <= radius; dy++) {

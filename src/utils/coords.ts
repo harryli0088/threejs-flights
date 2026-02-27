@@ -1,4 +1,6 @@
-const AIRPORT = { lat: 42.3656, lon: -71.0096 } as const;
+export const AIRPORT = { lat: 35.7702, lon: 140.3843 } as const;
+// export const AIRPORT = { lat: 51.4680, lon: -0.4599 } as const;
+// export const AIRPORT = { lat: 42.3656, lon: -71.0096 } as const;
 const R = 6_371_000; // earth radius in meters
 
 export function toXYZ(

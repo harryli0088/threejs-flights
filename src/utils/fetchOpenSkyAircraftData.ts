@@ -1,6 +1,6 @@
-import { toXYZ } from "./coords";
+import { AIRPORT, toXYZ } from "./coords";
 
-const BOSTON_BBOX = 'lamin=42.0656&lomin=-71.3096&lamax=42.6656&lomax=-70.7096';
+const BOSTON_BBOX = `lamin=${(AIRPORT.lat-0.3).toFixed(4)}&lomin=${(AIRPORT.lon-0.3).toFixed(4)}&lamax=${(AIRPORT.lat+0.3).toFixed(4)}&lomax=${(AIRPORT.lon+0.3).toFixed(4)}`;
 
 export async function fetchOpenSkyAircraftData() {
   try {

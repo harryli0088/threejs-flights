@@ -1,43 +1,85 @@
 import { useGLTF } from '@react-three/drei';
 import { useMemo, useRef } from 'react';
-import { Box3, Group, Vector3 } from 'three';
-import type { Flight } from '../utils/fetchOpenSkyAircraftData';
+import { Box3, Group, MathUtils, Vector3 } from 'three';
+import type { TrackedFlight } from '../hooks/useFlights';
+import { useFrame } from '@react-three/fiber';
+import { AltitudeLine } from './AltitudeLine';
 
 // Preload so it doesn't hitch on first render
 useGLTF.preload('/737/737.glb');
 
+const TARGET_LENGTH = 60;
+
 interface AircraftProps {
-  flight: Flight;
+  flight: TrackedFlight;
   scale: number;
+  onClick?: (flight: TrackedFlight) => void;
+  onPointerOver?: (flight: TrackedFlight) => void;
+  onPointerOut?: () => void;
+  onPositionUpdate?: (icao: string, position: [number, number, number]) => void;
 }
 
-const TARGET_LENGTH = 60; // meters — real 737 is ~40m, tune this
-
-export function Aircraft({ flight, scale }: AircraftProps) {
+export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut, onPositionUpdate }: AircraftProps) {
+  const groupRef = useRef<Group>(null);
   const { scene } = useGLTF('/737/737.glb');
+
+  const altLineRef = useRef<{ setPosition: (p: Vector3) => void }>(null);
+  const _vec = useMemo(() => new Vector3(), []); // reuse to avoid allocation
 
   const { cloned, normalizedScale } = useMemo(() => {
     const cloned = scene.clone();
-
-    // Measure the model's bounding box
     const box = new Box3().setFromObject(cloned);
     const size = new Vector3();
     box.getSize(size);
-
-    // Use the longest dimension (usually length) to normalize
     const longest = Math.max(size.x, size.y, size.z);
-    const normalizedScale = TARGET_LENGTH / longest;
-
-    return { cloned, normalizedScale };
+    return { cloned, normalizedScale: TARGET_LENGTH / longest };
   }, [scene]);
 
+  useFrame((_, delta) => {
+    if (!groupRef.current) return;
+
+    flight.lerpT = Math.min(flight.lerpT + delta / 10, 1);
+    const t = flight.lerpT;
+
+    const x = MathUtils.lerp(flight.prevPosition[0], flight.targetPosition[0], t);
+    const y = MathUtils.lerp(flight.prevPosition[1], flight.targetPosition[1], t);
+    const z = MathUtils.lerp(flight.prevPosition[2], flight.targetPosition[2], t);
+
+    groupRef.current.position.set(x, y, z);
+    // update altitude line with same interpolated position
+    altLineRef.current?.setPosition(_vec.set(x, y, z));
+
+    let dh = flight.targetHeading - flight.prevHeading;
+    if (dh > 180) dh -= 360;
+    if (dh < -180) dh += 360;
+    const heading = flight.prevHeading + dh * t;
+    groupRef.current.rotation.y = -(heading * Math.PI) / 180;
+
+    // Report live position for trails — only every ~1s to avoid too many points
+    if (Math.round(flight.lerpT * 10) % 2 === 0) {
+      onPositionUpdate?.(flight.icao, [x, y, z]);
+    }
+  });
+
   return (
-    <group
-      position={flight.position}
-      rotation={[0, -(flight.heading * Math.PI) / 180, 0]}
-      scale={normalizedScale * scale} // scale from useCameraDistance on top
-    >
-      <primitive object={cloned} />
-    </group>
+    <>
+      <group
+        ref={groupRef}
+        scale={normalizedScale * scale}
+        onClick={() => onClick?.(flight)}
+        onPointerOver={() => onPointerOver?.(flight)}
+        onPointerOut={() => onPointerOut?.()}
+      >
+        <mesh visible={false}>
+          <sphereGeometry args={[15, 8, 8]} />
+          <meshBasicMaterial />
+        </mesh>
+        <group rotation={[0, Math.PI, 0]}>
+          <primitive object={cloned} />
+        </group>
+      </group>
+
+      {!flight.onGround && <AltitudeLine ref={altLineRef} />}
+    </>
   );
 }
