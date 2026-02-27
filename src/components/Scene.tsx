@@ -5,9 +5,7 @@ import { useCameraDistance } from '../hooks/useCameraDistance';
 import { getAircraftScale } from '../utils/aircraftScale';
 import { usePanTo } from '../utils/usePanTo';
 import { FlightLabel } from './FlightLabel';
-import { FlightTrail } from './FlightTrail';
-import { useFlightTrails } from '../hooks/useFlightTrails';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { TrackedFlight } from '../hooks/useFlights';
 
 interface SceneProps {
@@ -16,25 +14,15 @@ interface SceneProps {
 }
 
 export function Scene({ flights, onSelect }: SceneProps) {
-   const { controlsRef, panTo } = usePanTo();
-    const cameraDistance = useCameraDistance();
-    const aircraftScale = getAircraftScale(cameraDistance);
-    const [hoveredFlight, setHoveredFlight] = useState<TrackedFlight | null>(null);
-    const { addPoint, getTrails } = useFlightTrails();
-    const [, forceUpdate] = useState(0);
+  const { controlsRef, panTo } = usePanTo();
+  const cameraDistance = useCameraDistance();
+  const aircraftScale = getAircraftScale(cameraDistance);
+  const [hoveredFlight, setHoveredFlight] = useState<TrackedFlight | null>(null);
 
-    // Rerender trails every 2s
-    useEffect(() => {
-      const id = setInterval(() => forceUpdate(n => n + 1), 2000);
-      return () => clearInterval(id);
-    }, []);
-
-    const trails = getTrails();
-
-    function handleClick(flight: TrackedFlight) {
-      onSelect(flight.icao);
-      panTo(flight.targetPosition[0], flight.targetPosition[1], flight.targetPosition[2]);
-    }
+  function handleClick(flight: TrackedFlight) {
+    onSelect(flight.icao);
+    panTo(flight.targetPosition[0], flight.targetPosition[1], flight.targetPosition[2]);
+  }
 
   return (
     <>
@@ -49,14 +37,7 @@ export function Scene({ flights, onSelect }: SceneProps) {
             onClick={handleClick}
             onPointerOver={() => setHoveredFlight(f)}
             onPointerOut={() => setHoveredFlight(null)}
-            onPositionUpdate={addPoint}
           />
-          {!f.onGround && (trails.get(f.icao)?.length ?? 0) > 1 && (
-            <FlightTrail
-              points={trails.get(f.icao)!}
-              color="#00ccff"
-            />
-          )}
           {hoveredFlight?.icao === f.icao && (
             <FlightLabel
               position={f.targetPosition}

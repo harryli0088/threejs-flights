@@ -1,6 +1,6 @@
 import { useGLTF } from '@react-three/drei';
 import { useMemo, useRef } from 'react';
-import { Box3, Group, MathUtils, Vector3 } from 'three';
+import { Box3, BufferGeometry, Group, MathUtils, Vector3 } from 'three';
 import type { TrackedFlight } from '../hooks/useFlights';
 import { useFrame } from '@react-three/fiber';
 import { AltitudeLine } from './AltitudeLine';
@@ -16,12 +16,13 @@ interface AircraftProps {
   onClick?: (flight: TrackedFlight) => void;
   onPointerOver?: (flight: TrackedFlight) => void;
   onPointerOut?: () => void;
-  onPositionUpdate?: (icao: string, position: [number, number, number]) => void;
 }
 
-export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut, onPositionUpdate }: AircraftProps) {
+export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut }: AircraftProps) {
   const groupRef = useRef<Group>(null);
   const { scene } = useGLTF('/737/737.glb');
+
+  const trailGeoRef = useRef<BufferGeometry>(null);
 
   const altLineRef = useRef<{ setPosition: (p: Vector3) => void }>(null);
   const _vec = useMemo(() => new Vector3(), []); // reuse to avoid allocation
@@ -55,9 +56,13 @@ export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut, 
     const heading = flight.prevHeading + dh * t;
     groupRef.current.rotation.y = -(heading * Math.PI) / 180;
 
-    // Report live position for trails — only every ~1s to avoid too many points
-    if (Math.round(flight.lerpT * 10) % 2 === 0) {
-      onPositionUpdate?.(flight.icao, [x, y, z]);
+    if (trailGeoRef.current) {
+      const attr = trailGeoRef.current.attributes.position;
+      // tail: where we started
+      attr.setXYZ(0, flight.prevPosition[0], flight.prevPosition[1], flight.prevPosition[2]);
+      // head: where we are now
+      attr.setXYZ(1, x, y, z);
+      attr.needsUpdate = true;
     }
   });
 
@@ -78,6 +83,18 @@ export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut, 
           <primitive object={cloned} />
         </group>
       </group>
+
+      {!flight.onGround && (
+        <line>
+          <bufferGeometry ref={trailGeoRef}>
+            <bufferAttribute
+              attach="attributes-position"
+              args={[new Float32Array(6), 3]}
+            />
+          </bufferGeometry>
+          <lineBasicMaterial color="#00ccff" transparent opacity={0.4} />
+        </line>
+      )}
 
       {!flight.onGround && <AltitudeLine ref={altLineRef} />}
     </>
