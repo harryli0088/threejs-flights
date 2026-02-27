@@ -6,22 +6,21 @@ import { getAircraftScale } from '../utils/aircraftScale';
 import { usePanTo } from '../utils/usePanTo';
 import { FlightLabel } from './FlightLabel';
 import { useState } from 'react';
-import type { TrackedFlight } from '../hooks/useFlights';
+import type { Flight } from '../utils/fetchOpenSkyAircraftData';
+import { useFlights, useFlightStore } from '../store/flights';
 
-interface SceneProps {
-  flights: TrackedFlight[];
-  onSelect: (icao: string) => void;
-}
+export function Scene() {
+  const flights = useFlights();
+  const { setSelectedFlightICAO } = useFlightStore();
 
-export function Scene({ flights, onSelect }: SceneProps) {
   const { controlsRef, panTo } = usePanTo();
   const cameraDistance = useCameraDistance();
   const aircraftScale = getAircraftScale(cameraDistance);
-  const [hoveredFlight, setHoveredFlight] = useState<TrackedFlight | null>(null);
+  const [hoveredFlight, setHoveredFlight] = useState<Flight | null>(null);
 
-  function handleClick(flight: TrackedFlight) {
-    onSelect(flight.icao);
-    panTo(flight.targetPosition[0], flight.targetPosition[1], flight.targetPosition[2]);
+  function handleClick(flight: Flight) {
+    setSelectedFlightICAO(flight.icao);
+    panTo(flight.history[0].position[0], flight.history[0].position[1], flight.history[0].position[2]);
   }
 
   return (
@@ -39,11 +38,7 @@ export function Scene({ flights, onSelect }: SceneProps) {
             onPointerOut={() => setHoveredFlight(null)}
           />
           {hoveredFlight?.icao === f.icao && (
-            <FlightLabel
-              position={f.targetPosition}
-              callsign={f.callsign}
-              altitude={f.altitude}
-            />
+            <FlightLabel flight={f}/>
           )}
         </group>
       ))}

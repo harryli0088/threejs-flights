@@ -1,22 +1,26 @@
-import { AIRPORT, toXYZ } from "./coords";
+import type { Airport } from "../data/airports";
+import { toXYZ } from "./coords";
 
-const BOSTON_BBOX = `lamin=${(AIRPORT.lat-0.3).toFixed(4)}&lomin=${(AIRPORT.lon-0.3).toFixed(4)}&lamax=${(AIRPORT.lat+0.3).toFixed(4)}&lomax=${(AIRPORT.lon+0.3).toFixed(4)}`;
+function getBBOX({lat,lon}:{lat:number,lon:number}) {
+  return `lamin=${(lat-0.3).toFixed(4)}&lomin=${(lon-0.3).toFixed(4)}&lamax=${(lat+0.3).toFixed(4)}&lomax=${(lon+0.3).toFixed(4)}`
+}
 
-export async function fetchOpenSkyAircraftData() {
+export async function fetchOpenSkyAircraftData(airport: Airport) {
   try {
     const res = await fetch(
-      `https://opensky-network.org/api/states/all?${BOSTON_BBOX}`
+      `https://opensky-network.org/api/states/all?${getBBOX(airport)}`
     );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data: OpenSkyResponseType = await res.json();
-    return parseFlights(data);
+    return parseFlights(data, airport);
   } catch (err) {
     console.error('Failed to fetch flights:', err);
     return [];
   }
 }
 
-function parseFlights(data: OpenSkyResponseType): Flight[] {
+
+function parseFlights(data: OpenSkyResponseType, airport: Airport): Flight[] {
   if (!data.states) return [];
 
   return data.states
@@ -27,15 +31,18 @@ function parseFlights(data: OpenSkyResponseType): Flight[] {
       const altitude = s[7] ?? s[13] ?? 0;
 
       return {
-        icao: s[0],
         callsign: s[1]?.trim() ?? 'UNKNOWN',
-        lon,
-        lat,
-        altitude,
-        heading: s[10] ?? 0,
-        velocity: s[9] ?? 0,
-        onGround: s[8],
-        position: toXYZ(lat, lon, altitude),
+        icao: s[0],
+        history: [{
+          altitude,
+          heading: s[10] ?? 0,
+          lat,
+          lon,
+          onGround: s[8],
+          position: toXYZ({altitude, airport, lat, lon}),
+          velocity: s[9] ?? 0,
+        }],
+        lerpT: 0,
       };
     });
 }
@@ -68,13 +75,18 @@ type OpenSkyAircraftStateType = [
 ]
 
 export interface Flight {
-  icao: string;
   callsign: string;
-  lon: number;
-  lat: number;
+  icao: string;
+  history: FlightHistory[];
+  lerpT: number; //between 0 and 1, used for interpolation
+}
+
+export interface FlightHistory {
   altitude: number;
   heading: number;
-  velocity: number;
+  lat: number;
+  lon: number;
   onGround: boolean;
   position: [number, number, number];
+  velocity: number;
 }

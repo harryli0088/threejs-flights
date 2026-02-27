@@ -1,0 +1,15 @@
+.flight-label {
+  background: rgba(0,0,0,0.7);
+  border: 1px solid rgba(0,200,255,0.5);
+  border-radius: 4px;
+  padding: 4px 8px;
+  color: #00ccff;
+  font-family: monospace;
+  font-size: 12;
+  white-space: nowrap;
+  user-select: none;
+
+  span {
+    color: rgba(255,255,255,0.6);
+  }
+}

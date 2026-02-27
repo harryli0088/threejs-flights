@@ -1,18 +1,23 @@
-export const AIRPORT = { lat: 35.7702, lon: 140.3843 } as const;
-// export const AIRPORT = { lat: 51.4680, lon: -0.4599 } as const;
-// export const AIRPORT = { lat: 42.3656, lon: -71.0096 } as const;
+import type { Airport } from "../data/airports";
+
 const R = 6_371_000; // earth radius in meters
 
-export function toXYZ(
+export function toXYZ({
+  altitude,
+  airport,
+  lat,
+  lon,
+}:{
+  altitude: number, //meters
+  airport: Airport,
   lat: number,
   lon: number,
-  altitudeMeters: number
-): [number, number, number] {
+}): [number, number, number] {
   const x =
-    (lon - AIRPORT.lon) *
+    (lon - airport.lon) *
     (Math.PI / 180) *
     R *
-    Math.cos((AIRPORT.lat * Math.PI) / 180);
-  const z = -(lat - AIRPORT.lat) * (Math.PI / 180) * R;
-  return [x, altitudeMeters, z];
+    Math.cos((airport.lat * Math.PI) / 180);
+  const z = -(lat - airport.lat) * (Math.PI / 180) * R;
+  return [x, altitude, z];
 }

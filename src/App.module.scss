@@ -1,0 +1,15 @@
+main#app {
+  width: 100vw;
+  height: 100vh;
+  background: #0a0a1a;
+  position: relative;
+  font-family: monospace;
+}
+
+#control-bar {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+
+  display: flex;
+}

@@ -1,45 +1,31 @@
-import type { TrackedFlight } from "../hooks/useFlights";
+import { useFlightStore } from "../store/flights";
 
-interface InfoPanelProps {
-  flight: TrackedFlight;
-  onClose: () => void;
-}
+import styles from "./InfoPanel.module.scss"
 
-export function InfoPanel({ flight, onClose }: InfoPanelProps) {
-  const altFt = Math.round(flight.altitude * 3.28084);
-  const speedKts = Math.round((flight.velocity ?? 0) * 1.944);
+export function InfoPanel() {
+  const { flights, selectedFlightICAO, setSelectedFlightICAO } = useFlightStore();
+  if(!selectedFlightICAO) return null;
+  const flight = flights.get(selectedFlightICAO);
+  if(!flight) return null;
+
+  const current = flight.history[0];
+  const altFt = Math.round(current.altitude * 3.28084);
+  const speedKts = Math.round((current.velocity ?? 0) * 1.944);
 
   return (
-    <div style={{
-      position: 'absolute',
-      top: 20,
-      right: 20,
-      background: 'rgba(0,0,0,0.75)',
-      backdropFilter: 'blur(8px)',
-      border: '1px solid rgba(255,255,255,0.15)',
-      borderRadius: 12,
-      padding: '16px 20px',
-      color: 'white',
-      fontFamily: 'monospace',
-      minWidth: 220,
-      zIndex: 10,
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-        <span style={{ fontSize: 18, fontWeight: 'bold', letterSpacing: 2 }}>
+    <div id={styles["info-panel"]}>
+      <div id={styles["heading"]}>
+        <span id={styles["callsign"]}>
           {flight.callsign}
         </span>
-        <button
-          onClick={onClose}
-          style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: 18 }}
-        >×</button>
+        <button id={styles["close-button"]} onClick={() => setSelectedFlightICAO(null)}>×</button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', fontSize: 13 }}>
+      <div id={styles["content"]}>
         <Stat label="ICAO" value={flight.icao.toUpperCase()} />
-        <Stat label="STATUS" value={flight.onGround ? 'ON GROUND' : 'AIRBORNE'} />
+        <Stat label="STATUS" value={current.onGround ? 'ON GROUND' : 'AIRBORNE'} />
         <Stat label="ALTITUDE" value={`${altFt.toLocaleString()} ft`} />
         <Stat label="SPEED" value={`${speedKts} kts`} />
-        <Stat label="HEADING" value={`${Math.round(flight.heading)}°`} />
-        {/* <Stat label="SQUAWK" value={flight.squawk ?? '----'} /> */}
+        <Stat label="HEADING" value={`${Math.round(current.heading)}°`} />
       </div>
     </div>
   );
@@ -48,7 +34,7 @@ export function InfoPanel({ flight, onClose }: InfoPanelProps) {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, marginBottom: 2 }}>{label}</div>
+      <div className={styles["label"]}>{label}</div>
       <div>{value}</div>
     </div>
   );

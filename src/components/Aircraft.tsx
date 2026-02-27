@@ -1,9 +1,9 @@
 import { useGLTF } from '@react-three/drei';
 import { useMemo, useRef } from 'react';
 import { Box3, BufferGeometry, Group, MathUtils, Vector3 } from 'three';
-import type { TrackedFlight } from '../hooks/useFlights';
 import { useFrame } from '@react-three/fiber';
 import { AltitudeLine } from './AltitudeLine';
+import type { Flight } from '../utils/fetchOpenSkyAircraftData';
 
 // Preload so it doesn't hitch on first render
 useGLTF.preload('/737/737.glb');
@@ -11,10 +11,10 @@ useGLTF.preload('/737/737.glb');
 const TARGET_LENGTH = 60;
 
 interface AircraftProps {
-  flight: TrackedFlight;
+  flight: Flight;
   scale: number;
-  onClick?: (flight: TrackedFlight) => void;
-  onPointerOver?: (flight: TrackedFlight) => void;
+  onClick?: (flight: Flight) => void;
+  onPointerOver?: (flight: Flight) => void;
   onPointerOut?: () => void;
 }
 
@@ -24,8 +24,7 @@ export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut }
 
   const trailGeoRef = useRef<BufferGeometry>(null);
 
-  const altLineRef = useRef<{ setPosition: (p: Vector3) => void }>(null);
-  const _vec = useMemo(() => new Vector3(), []); // reuse to avoid allocation
+  const altitudeGeoRef = useRef<BufferGeometry>(null);
 
   const { cloned, normalizedScale } = useMemo(() => {
     const cloned = scene.clone();
@@ -37,36 +36,53 @@ export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut }
   }, [scene]);
 
   useFrame((_, delta) => {
-    if (!groupRef.current) return;
+    const current = flight.history.at(0);
+    const prev = flight.history.at(1) || current;
+
+    // if(flight.icao.toUpperCase()==="A45922") {
+    //   console.log(current,prev)
+    // }
+    if (!groupRef.current || !current || !prev) return;
 
     flight.lerpT = Math.min(flight.lerpT + delta / 10, 1);
     const t = flight.lerpT;
 
-    const x = MathUtils.lerp(flight.prevPosition[0], flight.targetPosition[0], t);
-    const y = MathUtils.lerp(flight.prevPosition[1], flight.targetPosition[1], t);
-    const z = MathUtils.lerp(flight.prevPosition[2], flight.targetPosition[2], t);
+
+    const x = MathUtils.lerp(prev.position[0], current.position[0], t);
+    const y = MathUtils.lerp(prev.position[1], current.position[1], t);
+    const z = MathUtils.lerp(prev.position[2], current.position[2], t);
 
     groupRef.current.position.set(x, y, z); //set aircraft position
     //lerp heading
-    let dh = flight.targetHeading - flight.prevHeading;
+    let dh = current.heading - prev.heading;
     if (dh > 180) dh -= 360;
     if (dh < -180) dh += 360;
-    const heading = flight.prevHeading + dh * t;
+    const heading = prev.heading + dh * t;
     groupRef.current.rotation.y = -(heading * Math.PI) / 180;
 
 
-    altLineRef.current?.setPosition(_vec.set(x, y, z)); // set altitude line
+    //altitude line
+    if (altitudeGeoRef.current) {
+      const attr = altitudeGeoRef.current.attributes.position;
+      attr.setXYZ(0, x, 0, z);
+      attr.setXYZ(1, x, y, z);
+      attr.needsUpdate = true;
+    }
 
     if (trailGeoRef.current) {
       const attr = trailGeoRef.current.attributes.position;
-      // tail: where we started
-      attr.setXYZ(0, flight.prevPosition[0], flight.prevPosition[1], flight.prevPosition[2]);
-      // head: where we are now
-      attr.setXYZ(1, x, y, z);
+
+      //live interpolated head
+      attr.setXYZ(0, x, y, z);
+  
+      flight.history.slice(1).forEach((h, i) => {
+        attr.setXYZ(i+1, h.position[0], h.position[1], h.position[2]);
+      });
       attr.needsUpdate = true;
     }
   });
 
+  const onGround = flight.history[0]?.onGround ?? true;
   return (
     <>
       <group
@@ -85,19 +101,19 @@ export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut }
         </group>
       </group>
 
-      {!flight.onGround && (
+      {!onGround && (
         <line>
           <bufferGeometry ref={trailGeoRef}>
             <bufferAttribute
               attach="attributes-position"
-              args={[new Float32Array(6), 3]}
+              args={[new Float32Array((flight.history.length) * 3), 3]}
             />
           </bufferGeometry>
           <lineBasicMaterial color="#00ccff" transparent opacity={0.4} />
         </line>
       )}
 
-      {!flight.onGround && <AltitudeLine ref={altLineRef} />}
+      {!onGround && <AltitudeLine geoRef={altitudeGeoRef} />}
     </>
   );
 }
