@@ -78,7 +78,7 @@ export function Terrain() {
   const subTileOffsetX = (centerTile.fracX - 0.5) * tileSize;
   const subTileOffsetZ = (centerTile.fracY - 0.5) * tileSize;
 
-  const radius = 4;
+  const radius = 6;
   const tiles = [];
   for (let dx = -radius; dx <= radius; dx++) {
     for (let dy = -radius; dy <= radius; dy++) {

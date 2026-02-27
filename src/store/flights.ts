@@ -9,7 +9,7 @@ interface FlightState {
   setSelectedFlightICAO: (icao:string | null) => void;
 }
 
-const POSITIONS_TO_SAVE = 5;
+const POSITIONS_TO_SAVE = 10;
 export const useFlightStore = create<FlightState>((set) => ({
   flights: new Map(),
   mergeFlights: (incoming) => set((state) => {

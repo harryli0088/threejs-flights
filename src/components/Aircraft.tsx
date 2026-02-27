@@ -4,6 +4,7 @@ import { Box3, BufferGeometry, Group, MathUtils, Vector3 } from 'three';
 import { useFrame } from '@react-three/fiber';
 import { AltitudeLine } from './AltitudeLine';
 import type { Flight } from '../utils/fetchOpenSkyAircraftData';
+import { POLL_INTERVAL_S } from '../hooks/useFetchData';
 
 // Preload so it doesn't hitch on first render
 useGLTF.preload('/737/737.glb');
@@ -39,12 +40,9 @@ export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut }
     const current = flight.history.at(0);
     const prev = flight.history.at(1) || current;
 
-    // if(flight.icao.toUpperCase()==="A45922") {
-    //   console.log(current,prev)
-    // }
     if (!groupRef.current || !current || !prev) return;
 
-    flight.lerpT = Math.min(flight.lerpT + delta / 10, 1);
+    flight.lerpT = Math.min(flight.lerpT + delta / POLL_INTERVAL_S, 1);
     const t = flight.lerpT;
 
 
@@ -75,9 +73,10 @@ export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut }
       //live interpolated head
       attr.setXYZ(0, x, y, z);
   
-      flight.history.slice(1).forEach((h, i) => {
-        attr.setXYZ(i+1, h.position[0], h.position[1], h.position[2]);
-      });
+      for(let i=1; i<flight.history.length; ++i) {
+        const {position} = flight.history[i];
+        attr.setXYZ(i, position[0], position[1], position[2]);
+      }
       attr.needsUpdate = true;
     }
   });
@@ -109,7 +108,7 @@ export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut }
               args={[new Float32Array((flight.history.length) * 3), 3]}
             />
           </bufferGeometry>
-          <lineBasicMaterial color="#00ccff" transparent opacity={0.4} />
+          <lineBasicMaterial color="#00ccff" transparent opacity={1} />
         </line>
       )}
 

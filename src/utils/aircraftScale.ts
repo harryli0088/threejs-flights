@@ -3,4 +3,4 @@ export function getAircraftScale(cameraDistance: number): number {
   return Math.max(0.5, Math.min(scale, 20));
 }
 
-const SCALE = 3;
+const SCALE = 4;

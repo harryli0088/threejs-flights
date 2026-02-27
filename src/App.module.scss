@@ -3,7 +3,6 @@ main#app {
   height: 100vh;
   background: #0a0a1a;
   position: relative;
-  font-family: monospace;
 }
 
 #control-bar {
@@ -12,4 +11,9 @@ main#app {
   left: 1rem;
 
   display: flex;
+  align-items: center;
+
+  p {
+    margin-left: 1rem;
+  }
 }
