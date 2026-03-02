@@ -29,6 +29,7 @@ export default function App() {
       </main>
       <footer>
         <p>Flight data provided by <a href="https://opensky-network.org" target='_blank'>OpenSky Network</a></p>
+        <p><a href="https://github.com/harryli0088/threejs-flights" target='_blank'>GitHub Repo</a></p>
         <p><a href="https://sketchfab.com/3d-models/airplane-all-files-5406ac929a66470f9e598a87d9e4c9dd" target='_blank'>737 model</a></p>
       </footer>
     </>
