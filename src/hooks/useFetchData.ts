@@ -16,5 +16,6 @@ export function useFetchData() {
       return null; // React Query doesn't need to own the data
     },
     refetchInterval: POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
   });
 }

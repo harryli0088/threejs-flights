@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { TextureLoader, Texture } from 'three';
-import { useThree } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { latLonToTile, tileMetersWidth } from '../utils/tiles';
 import { useAirportStore } from '../store/airport';
 
@@ -60,15 +60,12 @@ function TerrainTile({ zoom, tileX, tileY, worldX, worldZ, tileSize }: TerrainTi
 
 export function Terrain() {
   const { airport } = useAirportStore();
-  const { camera } = useThree();
   const [zoom, setZoom] = useState(11);
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      setZoom(getZoomFromCameraHeight(camera.position.y));
-    }, 500);
-    return () => clearInterval(id);
-  }, [camera]);
+  useFrame(({ camera }) => {
+    const zoom = getZoomFromCameraHeight(camera.position.y);
+    setZoom((prev) => (prev !== zoom ? zoom : prev));
+  });
 
   const tileSize = tileMetersWidth(airport.lat, zoom);
   const centerTile = latLonToTile(airport.lat, airport.lon, zoom);
