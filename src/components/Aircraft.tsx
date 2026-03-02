@@ -6,8 +6,10 @@ import { AltitudeLine } from './AltitudeLine';
 import type { Flight } from '../utils/fetchOpenSkyAircraftData';
 import { POLL_INTERVAL_S } from '../hooks/useFetchData';
 
+const MODEL_PATH = `${import.meta.env.BASE_URL}737/737.glb`;
+
 // Preload so it doesn't hitch on first render
-useGLTF.preload('/737/737.glb');
+useGLTF.preload(MODEL_PATH);
 
 const TARGET_LENGTH = 60;
 
@@ -21,7 +23,7 @@ interface AircraftProps {
 
 export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut }: AircraftProps) {
   const groupRef = useRef<Group>(null);
-  const { scene } = useGLTF('/737/737.glb');
+  const { scene } = useGLTF(MODEL_PATH);
 
   const trailGeoRef = useRef<BufferGeometry>(null);
 
