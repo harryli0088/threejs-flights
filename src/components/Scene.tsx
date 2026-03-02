@@ -5,18 +5,16 @@ import { useCameraDistance } from '../hooks/useCameraDistance';
 import { getAircraftScale } from '../utils/aircraftScale';
 import { usePanTo } from '../utils/usePanTo';
 import { FlightLabel } from './FlightLabel';
-import { useState } from 'react';
 import type { Flight } from '../utils/fetchOpenSkyAircraftData';
 import { useFlights, useFlightStore } from '../store/flights';
 
 export function Scene() {
   const flights = useFlights();
-  const { setSelectedFlightICAO } = useFlightStore();
+  const { hoveredFlightICAO, setSelectedFlightICAO } = useFlightStore();
 
   const { controlsRef, panTo } = usePanTo();
   const cameraDistance = useCameraDistance();
   const aircraftScale = getAircraftScale(cameraDistance);
-  const [hoveredFlight, setHoveredFlight] = useState<Flight | null>(null);
 
   function handleClick(flight: Flight) {
     setSelectedFlightICAO(flight.icao);
@@ -34,10 +32,8 @@ export function Scene() {
             flight={f}
             scale={aircraftScale}
             onClick={handleClick}
-            onPointerOver={() => setHoveredFlight(f)}
-            onPointerOut={() => setHoveredFlight(null)}
           />
-          {hoveredFlight?.icao === f.icao && (
+          {hoveredFlightICAO === f.icao && (
             <FlightLabel flight={f}/>
           )}
         </group>

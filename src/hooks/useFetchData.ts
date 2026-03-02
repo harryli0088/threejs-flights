@@ -3,7 +3,7 @@ import { fetchOpenSkyAircraftData } from "../utils/fetchOpenSkyAircraftData";
 import { useFlightStore } from "../store/flights";
 import { useAirportStore } from "../store/airport";
 
-export const POLL_INTERVAL_S = 10;
+export const POLL_INTERVAL_S = 7;
 const POLL_INTERVAL_MS = POLL_INTERVAL_S * 1000;
 export function useFetchData() {
   const { airport } = useAirportStore();

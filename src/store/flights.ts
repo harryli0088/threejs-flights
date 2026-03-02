@@ -5,11 +5,16 @@ import { useShallow } from "zustand/shallow";
 interface FlightState {
   flights: Map<string, Flight>;
   mergeFlights: (incoming: Flight[]) => void;
+
+  hoveredFlightICAO: string | null;
+  setHoveredFlightICAO: (icao:string | null) => void;
+
+
   selectedFlightICAO: string | null;
   setSelectedFlightICAO: (icao:string | null) => void;
 }
 
-const POSITIONS_TO_SAVE = 10;
+export const POSITIONS_TO_SAVE = 10;
 export const useFlightStore = create<FlightState>((set) => ({
   flights: new Map(),
   mergeFlights: (incoming) => set((state) => {
@@ -38,6 +43,9 @@ export const useFlightStore = create<FlightState>((set) => ({
     });
     return { flights: map };
   }),
+
+  hoveredFlightICAO: null,
+  setHoveredFlightICAO: (icao) => set({ hoveredFlightICAO: icao }),
 
   selectedFlightICAO: null,
   setSelectedFlightICAO: (icao) => set({ selectedFlightICAO: icao }),

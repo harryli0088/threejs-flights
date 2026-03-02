@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { AltitudeLine } from './AltitudeLine';
 import type { Flight } from '../utils/fetchOpenSkyAircraftData';
 import { POLL_INTERVAL_S } from '../hooks/useFetchData';
+import { POSITIONS_TO_SAVE, useFlightStore } from '../store/flights';
 
 const MODEL_PATH = `${import.meta.env.BASE_URL}737/737.glb`;
 
@@ -17,11 +18,11 @@ interface AircraftProps {
   flight: Flight;
   scale: number;
   onClick?: (flight: Flight) => void;
-  onPointerOver?: (flight: Flight) => void;
-  onPointerOut?: () => void;
 }
 
-export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut }: AircraftProps) {
+export function Aircraft({ flight, scale, onClick }: AircraftProps) {
+  const { setHoveredFlightICAO } = useFlightStore();
+
   const groupRef = useRef<Group>(null);
   const { scene } = useGLTF(MODEL_PATH);
 
@@ -79,6 +80,7 @@ export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut }
         const {position} = flight.history[i];
         attr.setXYZ(i, position[0], position[1], position[2]);
       }
+      trailGeoRef.current.setDrawRange(0, flight.history.length);
       attr.needsUpdate = true;
     }
   });
@@ -90,8 +92,8 @@ export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut }
         ref={groupRef}
         scale={normalizedScale * scale}
         onClick={() => onClick?.(flight)}
-        onPointerOver={() => onPointerOver?.(flight)}
-        onPointerOut={() => onPointerOut?.()}
+        onPointerOver={() => setHoveredFlightICAO(flight.icao)}
+        onPointerOut={() => setHoveredFlightICAO(null)}
       >
         <mesh visible={false}>
           <sphereGeometry args={[15, 8, 8]} />
@@ -107,7 +109,7 @@ export function Aircraft({ flight, scale, onClick, onPointerOver, onPointerOut }
           <bufferGeometry ref={trailGeoRef}>
             <bufferAttribute
               attach="attributes-position"
-              args={[new Float32Array((flight.history.length) * 3), 3]}
+              args={[new Float32Array(POSITIONS_TO_SAVE * 3), 3]}
             />
           </bufferGeometry>
           <lineBasicMaterial color="#00ccff" transparent opacity={1} />
