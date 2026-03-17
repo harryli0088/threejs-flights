@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type { Flight } from "../utils/fetchOpenSkyAircraftData";
 import { useShallow } from "zustand/shallow";
+import { estimatePreviousPoint } from "../utils/estimatePreviousPoint";
+import { useAirportStore } from "./airport";
 
 interface FlightState {
   flights: Map<string, Flight>;
@@ -22,10 +24,15 @@ export const useFlightStore = create<FlightState>((set) => ({
     incoming.forEach((f) => {
       const existing = map.get(f.icao);
       if (!existing) {
-          // First time we see this aircraft — render in place, no interpolation yet
+          // First time we see this aircraft — estimate a previous point
+          const current = f.history[0];
+          const airport = useAirportStore.getState().airport;
+          const prev = estimatePreviousPoint(current, airport);
+
           map.set(f.icao, {
             ...f,
-            lerpT: 1, // already "arrived"
+            history: [current, prev], // previous point first
+            lerpT: 0, // start interpolation from prev -> current
           });
         } else {
           // Subsequent poll — start interpolating from where it currently is

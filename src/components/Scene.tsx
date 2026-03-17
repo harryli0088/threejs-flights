@@ -18,7 +18,8 @@ export function Scene() {
 
   function handleClick(flight: Flight) {
     setSelectedFlightICAO(flight.icao);
-    panTo(flight.history[0].position[0], flight.history[0].position[1], flight.history[0].position[2]);
+    const position = flight.history[0].position;
+    panTo(position[0], position[1], position[2]);
   }
 
   return (
