@@ -21,7 +21,7 @@ const textureCache = new Map<string, Texture>();
 // Hook to load a tile texture and cache it
 function useTileTexture(zoom: number, x: number, y: number) {
   const [texture, setTexture] = useState<Texture | null>(null);
-  const key = `${zoom}/${x}/${y}`;
+  const key = `${zoom}/${y}/${x}`; //also used to request map tiles
 
   useMemo(() => {
     if (textureCache.has(key)) {
@@ -29,7 +29,7 @@ function useTileTexture(zoom: number, x: number, y: number) {
       return;
     }
     const loader = new TextureLoader();
-    const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${y}/${x}`;
+    const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${key}`;
     loader.load(url, (tex) => {
       textureCache.set(key, tex);
       setTexture(tex);

@@ -15,7 +15,7 @@ export default function App() {
   return (
     <>
       <main id={styles["app"]}>
-        <Canvas camera={{ position: [0, 50000, 50000], fov: 60, near: 1, far: 500_000 }}>
+        <Canvas camera={{ position: [0, 50000, 50000], fov: 60, near: 100, far: 500_000 }}>
           <Scene/>
         </Canvas>
 

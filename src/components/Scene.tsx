@@ -24,8 +24,9 @@ export function Scene() {
 
   return (
     <>
-      <ambientLight intensity={1} />
-      <directionalLight position={[1000, 2000, 1000]} intensity={1} />
+      <ambientLight intensity={0.3} />
+      <directionalLight position={[1000, 2000, 1000]} intensity={1.2} />
+      <hemisphereLight />
       <Terrain />
       {flights.map(f => (
         <group key={f.icao}>
@@ -39,7 +40,7 @@ export function Scene() {
           )}
         </group>
       ))}
-      <OrbitControls ref={controlsRef} />
+      <OrbitControls ref={controlsRef} maxPolarAngle={Math.PI / 2}/>
     </>
   );
 }
