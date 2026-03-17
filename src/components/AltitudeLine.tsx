@@ -1,12 +1,18 @@
-import { useMemo } from 'react';
-import { BufferGeometry, Float32BufferAttribute, LineBasicMaterial, Line } from 'three';
+import { BufferGeometry, LineBasicMaterial } from 'three';
+import React from 'react';
+
+export const sharedLineMaterial = new LineBasicMaterial({ color: '#fff' });
 
 export function AltitudeLine({ geoRef }: { geoRef: React.RefObject<BufferGeometry | null> }) {
-  const line = useMemo(() => {
-    const geo = new BufferGeometry();
-    geo.setAttribute('position', new Float32BufferAttribute([0,0,0,0,0,0], 3));
-    return new Line(geo, new LineBasicMaterial({ color: '#fff' }));
-  }, []);
-
-  return <primitive object={line} ref={(obj: Line) => { if (obj) (geoRef as any).current = obj.geometry; }} />;
+  return (
+    <line>
+      <bufferGeometry ref={geoRef}>
+        <bufferAttribute
+          attach="attributes-position"
+          args={[new Float32Array(6), 3]} // two points (start/end)
+        />
+      </bufferGeometry>
+      <primitive object={sharedLineMaterial} attach="material" />
+    </line>
+  );
 }

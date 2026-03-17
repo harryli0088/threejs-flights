@@ -1,6 +1,6 @@
 import { useGLTF } from '@react-three/drei';
 import { useMemo, useRef } from 'react';
-import { Box3, BufferGeometry, Group, MathUtils, Vector3, type Object3DEventMap } from 'three';
+import { Box3, BufferGeometry, Group, MathUtils, Vector3, LineBasicMaterial, type Object3DEventMap } from 'three';
 import { useFrame } from '@react-three/fiber';
 import { AltitudeLine } from './AltitudeLine';
 import type { Flight } from '../utils/fetchOpenSkyAircraftData';
@@ -14,6 +14,9 @@ useGLTF.preload(MODEL_PATH);
 //constants
 const TARGET_LENGTH = 60;
 const DEG2RAD = Math.PI / 180;
+
+// shared line material for all trails
+const sharedLineMaterial = new LineBasicMaterial({ color: '#00ccff' });
 
 // cache normalization
 let normalizedScaleCache: number | null = null;
@@ -48,12 +51,10 @@ export function Aircraft({ flight, scale, onClick }: AircraftProps) {
   const trailGeoRef = useRef<BufferGeometry>(null);
   const altitudeGeoRef = useRef<BufferGeometry>(null);
 
-  const { cloned, normalizedScale } = useMemo(() => {
-    return {
-      cloned: scene.clone(),
-      normalizedScale: getNormalizedScale(scene)
-    };
-  }, [scene]);
+  const { cloned, normalizedScale } = useMemo(() => ({
+    cloned: scene.clone(),
+    normalizedScale: getNormalizedScale(scene),
+  }), [scene]);
 
   useFrame((_, delta) => {
     const group = groupRef.current;
@@ -67,35 +68,37 @@ export function Aircraft({ flight, scale, onClick }: AircraftProps) {
     flight.lerpT = Math.min(flight.lerpT + delta / POLL_INTERVAL_S, 1);
     const t = flight.lerpT;
 
-    //lerp position
+    // lerp position
     const x = MathUtils.lerp(prev.position[0], current.position[0], t);
     const y = MathUtils.lerp(prev.position[1], current.position[1], t);
     const z = MathUtils.lerp(prev.position[2], current.position[2], t);
     group.position.set(x, y, z);
 
-    //lerp heading
+    // lerp heading
     let dh = current.heading - prev.heading;
     if (dh > 180) dh -= 360;
     if (dh < -180) dh += 360;
     const heading = prev.heading + dh * t;
     group.rotation.y = -heading * DEG2RAD;
 
-    // altitude line
-    const altitudeGeo = altitudeGeoRef.current;
-    if (altitudeGeo) {
-      const attr = altitudeGeo.attributes.position;
+    // update altitude line
+    const altGeo = altitudeGeoRef.current;
+    if (altGeo) {
+      const attr = altGeo.attributes.position;
       attr.setXYZ(0, x, 0, z);
       attr.setXYZ(1, x, y, z);
       attr.needsUpdate = true;
     }
 
-    // trail
+    // update trail
     const trailGeo = trailGeoRef.current;
     if (trailGeo) {
       const attr = trailGeo.attributes.position;
 
+      // head of trail
       attr.setXYZ(0, x, y, z);
 
+      // rest of trail
       for (let i = 1; i < history.length; i++) {
         const p = history[i].position;
         attr.setXYZ(i, p[0], p[1], p[2]);
@@ -104,7 +107,7 @@ export function Aircraft({ flight, scale, onClick }: AircraftProps) {
       trailGeo.setDrawRange(0, history.length);
       attr.needsUpdate = true;
     }
-  })
+  });
 
   const onGround = flight.history[0]?.onGround ?? true;
 
@@ -135,7 +138,7 @@ export function Aircraft({ flight, scale, onClick }: AircraftProps) {
               args={[new Float32Array(POSITIONS_TO_SAVE * 3), 3]}
             />
           </bufferGeometry>
-          <lineBasicMaterial color="#00ccff" transparent opacity={1} />
+          <primitive object={sharedLineMaterial} attach="material" />
         </line>
       )}
 
